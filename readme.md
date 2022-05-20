@@ -2,12 +2,9 @@
 
 * Raspbian on [banana pi m2 zero](https://wiki.banana-pi.org/Banana_Pi_BPI-M2_ZERO)
 * OctoPrint via wi-fi
-* SKR 1.4 Turbo + TMC2209
-* Auto bed leveling with 3DTouch
-
-* [Filament guide](https://www.thingiverse.com/thing:3052488/files)
-* [Spool roller](https://www.thingiverse.com/thing:3290358/files)
-* [BlTouch mount (3mm lower version)](https://www.thingiverse.com/thing:3003725/files)
+* [Marlin 2](/marlin) + SKR 1.4 Turbo + TMC2209
+* Auto bed leveling with 3DTouch [[mount]](https://www.thingiverse.com/thing:3003725/files)
+* Filament guidance with [filament guide](https://www.thingiverse.com/thing:3052488/files) and [spool roller](https://www.thingiverse.com/thing:3290358/files)
 
 [Bill of materials with links to Aliexpress](/doc/bill-of-materials.md)
 
