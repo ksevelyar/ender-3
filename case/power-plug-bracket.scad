@@ -6,9 +6,6 @@ inner_y = 105;
 height_z = 30;
 wall = 2;
 
-mount_z = 17;
-mount_x = 27.5;
-
 spacer_x = 50;
 inner_x = 60;
 
@@ -28,10 +25,10 @@ module ventilation_line(start_x, start_y) {
   line(start_x, start_y + y_gap);
 }
 
-module ventilation() {
-  ventilation_line(36 + spacer_x, 16);
-  ventilation_line(36 + 8 + spacer_x, 16);
-  ventilation_line(36 + 16 + spacer_x, 16);
+module ventilation(start_x, start_y) {
+  ventilation_line(start_x, start_y);
+  ventilation_line(start_x + 8, start_y);
+  ventilation_line(start_x + 16, start_y);
 }
 
 module bottom() {
@@ -40,8 +37,27 @@ module bottom() {
 
   difference() {
     cube([bottom_x, outer_y, 1]);
-    ventilation();
+    ventilation(36 + spacer_x, 16);
   }
 }
 
+module mount_holes() {
+  mount_z = 17;
+  mount_x = spacer_x + 32;
+
+  translate([mount_x,-10,mount_z]) {
+    rotate([-90,0,0]) cylinder(h = 200, d = 3, $fn=16);
+  }
+}
+module walls() {
+  module wall() { cube([spacer_x + inner_x, 2, 30]); }
+
+  wall();
+  translate([0, outer_y - wall, 0]) wall();
+}
+
 bottom();
+difference() {
+  walls();
+  mount_holes();
+}
