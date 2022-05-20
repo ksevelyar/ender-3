@@ -18,7 +18,6 @@ module ventilation_line(start_x, start_y) {
   y_gap = line_length + 17;
 
   module line(line_x, line_y) {
-
     hull() {
       translate([line_x, line_y, -0.1]) dot();
       translate([line_x, line_y + line_length, -0.1]) dot();
@@ -30,9 +29,9 @@ module ventilation_line(start_x, start_y) {
 }
 
 module ventilation() {
-    ventilation_line(36 + spacer_x, 16);
-    ventilation_line(36 + 8 + spacer_x, 16);
-    ventilation_line(36 + 16 + spacer_x, 16);
+  ventilation_line(36 + spacer_x, 16);
+  ventilation_line(36 + 8 + spacer_x, 16);
+  ventilation_line(36 + 16 + spacer_x, 16);
 }
 
 module bottom() {
