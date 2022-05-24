@@ -19,21 +19,21 @@ module bottom() {
 
 module bpi_m2_zero_mounts() {
   start_x = 143;
-  start_y = 72;
+  start_y = 64;
   x_dist = 58;
   y_dist = 23;
 
-  module bpi_m2_zero_mount() {
+  module mount() {
     difference() {
       cylinder(d = 4, h = 4);
       cylinder(d = 2, h = 5);
     }
   }
 
-  translate([start_x, start_y, 0]) bpi_m2_zero_mount();
-  translate([start_x + x_dist, start_y, 0]) bpi_m2_zero_mount();
-  translate([start_x, start_y + y_dist, 0]) bpi_m2_zero_mount();
-  translate([start_x + x_dist, start_y + y_dist, 0]) bpi_m2_zero_mount();
+  translate([start_x, start_y, 0]) mount();
+  translate([start_x + x_dist, start_y, 0]) mount();
+  translate([start_x, start_y + y_dist, 0]) mount();
+  translate([start_x + x_dist, start_y + y_dist, 0]) mount();
 }
 
 module skr_14t_mounts() {
@@ -42,19 +42,37 @@ module skr_14t_mounts() {
   x_dist = 102;
   y_dist = 77;
 
-  module skr_14t_mount() {
+  module mount() {
     difference() {
-      cylinder(d = 7, h = 4);
-      cylinder(d = 4, h = 5);
+      cylinder(d = 6, h = 4);
+      cylinder(d = 3, h = 5);
     }
   }
 
-  translate([start_x, start_y, 0]) skr_14t_mount();
-  translate([start_x + x_dist, start_y, 0]) skr_14t_mount();
-  translate([start_x, start_y + y_dist, 0]) skr_14t_mount();
-  translate([start_x + x_dist, start_y + y_dist, 0]) skr_14t_mount();
+  translate([start_x, start_y, 0]) mount();
+  translate([start_x + x_dist, start_y, 0]) mount();
+  translate([start_x, start_y + y_dist, 0]) mount();
+  translate([start_x + x_dist, start_y + y_dist, 0]) mount();
+}
+
+module lm2596_mounts() {
+  start_x = 146;
+  start_y = 40;
+  x_dist = 37;
+  y_dist = -18;
+
+  module mount() {
+    difference() {
+      cylinder(d = 6, h = 4);
+      cylinder(d = 3, h = 5);
+    }
+  }
+
+  translate([start_x, start_y, 0]) mount();
+  translate([start_x + x_dist, start_y + y_dist, 0]) mount();
 }
 
 bottom();
 skr_14t_mounts();
 bpi_m2_zero_mounts();
+lm2596_mounts();
