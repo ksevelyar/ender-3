@@ -1,13 +1,14 @@
 $fn=16;
 outer_y = 115;
 outer_x = 214;
+legs_height = 6;
 
 module bottom_mounts() {
-  translate([32, 32, -0.1]) cylinder(d = 4, h = 4);
-  translate([32, 82, -0.1]) cylinder(d = 4, h = 4);
+  translate([32, 32, -0.1]) cylinder(d = 4, h = legs_height);
+  translate([32, 82, -0.1]) cylinder(d = 4, h = legs_height);
 
-  translate([182, 32, -0.1]) cylinder(d = 4, h = 4);
-  translate([182, 82, -0.1]) cylinder(d = 4, h = 4);
+  translate([182, 32, -0.1]) cylinder(d = 4, h = legs_height);
+  translate([182, 82, -0.1]) cylinder(d = 4, h = legs_height);
 }
 
 module bottom() {
@@ -25,8 +26,8 @@ module bpi_m2_zero_mounts() {
 
   module mount() {
     difference() {
-      cylinder(d = 4, h = 4);
-      cylinder(d = 2, h = 5);
+      cylinder(d = 4, h = legs_height);
+      cylinder(d = 2, h = legs_height + 1);
     }
   }
 
@@ -44,8 +45,8 @@ module skr_14t_mounts() {
 
   module mount() {
     difference() {
-      cylinder(d = 6, h = 4);
-      cylinder(d = 3, h = 5);
+      cylinder(d = 6, h = legs_height);
+      cylinder(d = 3, h = legs_height + 1);
     }
   }
 
@@ -63,8 +64,8 @@ module lm2596_mounts() {
 
   module mount() {
     difference() {
-      cylinder(d = 6, h = 4);
-      cylinder(d = 3, h = 5);
+      cylinder(d = 6, h = legs_height);
+      cylinder(d = 3, h = legs_height + 1);
     }
   }
 
