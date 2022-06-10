@@ -1,25 +1,27 @@
-$fn=16;
+$fn=32;
 outer_y = 115;
 outer_x = 220;
 legs_height = 6;
 
-module bottom_mounts() {
-  translate([32, 32, -0.1]) cylinder(d = 4, h = legs_height);
-  translate([32, 82, -0.1]) cylinder(d = 4, h = legs_height);
-
-  translate([182, 32, -0.1]) cylinder(d = 4, h = legs_height);
-  translate([182, 82, -0.1]) cylinder(d = 4, h = legs_height);
-}
-
 module bottom() {
+  bottom_height = 0.4;
+
+  module bottom_mounts() {
+    translate([32, 32, -0.1]) cylinder(d = 4, h = bottom_height + 1);
+    translate([32, 82, -0.1]) cylinder(d = 4, h = bottom_height + 1);
+
+    translate([182, 32, -0.1]) cylinder(d = 4, h = bottom_height + 1);
+    translate([182, 82, -0.1]) cylinder(d = 4, h = bottom_height + 1);
+  }
+
   difference() {
-    cube([outer_x, outer_y, 2]);
+    cube([outer_x, outer_y, bottom_height]);
     bottom_mounts();
   }
 }
 
 module bpi_m2_zero_mounts() {
-  start_x = 143;
+  start_x = 140;
   start_y = 64;
   x_dist = 58;
   y_dist = 23;
@@ -85,7 +87,7 @@ module display_mounts() {
 }
 
 module lm2596_mounts() {
-  start_x = 170;
+  start_x = 160;
   start_y = 45;
   x_dist = 30;
   y_dist = -18;
