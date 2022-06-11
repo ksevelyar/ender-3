@@ -1,10 +1,10 @@
-$fn=32;
+$fn=64;
 outer_y = 115;
-outer_x = 220;
+outer_x = 215;
 legs_height = 6;
 
 module bottom() {
-  bottom_height = 0.4;
+  bottom_height = 2;
 
   module bottom_mounts() {
     translate([32, 32, -0.1]) cylinder(d = 4, h = bottom_height + 1);
@@ -90,7 +90,7 @@ module lm2596_mounts() {
   start_x = 160;
   start_y = 45;
   x_dist = 30;
-  y_dist = -18;
+  y_dist = -16;
 
   module mount() {
     difference() {
@@ -105,14 +105,12 @@ module lm2596_mounts() {
 
 module antenna_mount() {
   module wall() {
-    intersection() {
-      translate([outer_x - 10, 2, 2]) rotate([90, 0, 0]) cylinder(d = 20, h = 2, $fn=64);
-      translate([outer_x - 30, 0, 0]) cube([30, 2, 20]);
-    }
+      translate([outer_x - 10, 2, 10]) rotate([90, 0, 0]) cylinder(d = 20, h = 2, $fn=64);
+      translate([outer_x - 20, 0, 0]) cube([20, 2, 10]);
   }
 
   module hole() {
-    translate([outer_x - 9.6, 2.1, 6.8]) rotate([90, 0, 0]) cylinder(d = 6.3, h = 3, $fn=64);
+    translate([outer_x - 10, 2.1, 10]) rotate([90, 0, 0]) cylinder(d = 6.5, h = 3, $fn=64);
   }
 
   difference() {

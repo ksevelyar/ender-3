@@ -57,7 +57,7 @@ module bottom() {
 }
 
 module mount_holes() {
-  mount_z = height_z - 17;
+  mount_z = height_z - 13;
   mount_x = spacer_x + 32;
 
   translate([mount_x,-10,mount_z]) {
