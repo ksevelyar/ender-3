@@ -60,9 +60,9 @@ module skr_14t_mounts() {
 
 
 module display_mounts() {
-  x_dist = 87;
+  x_dist = 88;
   y_dist = 65;
-  start_x = 121;
+  start_x = 120;
   start_y = (outer_y - y_dist) / 2;
   display_legs_height = 20;
 
