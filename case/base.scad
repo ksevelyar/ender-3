@@ -22,14 +22,14 @@ module bottom() {
 
 module bpi_m2_zero_mounts() {
   start_x = 140;
-  start_y = 64;
+  start_y = 23;
   x_dist = 58;
   y_dist = 23;
 
   module mount() {
     difference() {
       cylinder(d = 4, h = legs_height);
-      cylinder(d = 2, h = legs_height + 1);
+      cylinder(d = 1.9, h = legs_height + 1);
     }
   }
 
@@ -87,15 +87,15 @@ module display_mounts() {
 }
 
 module lm2596_mounts() {
-  start_x = 160;
-  start_y = 45;
-  x_dist = 30;
-  y_dist = -16;
+  start_x = 190;
+  start_y = 60;
+  x_dist = -16;
+  y_dist = 30;
 
   module mount() {
     difference() {
       cylinder(d = 5, h = legs_height);
-      cylinder(d = 2.5, h = legs_height + 1);
+      cylinder(d = 2.4, h = legs_height + 1);
     }
   }
 
@@ -123,5 +123,5 @@ bottom();
 skr_14t_mounts();
 bpi_m2_zero_mounts();
 lm2596_mounts();
-display_mounts();
-antenna_mount();
+//display_mounts();
+//antenna_mount();
