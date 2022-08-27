@@ -100,7 +100,22 @@ module top_wall() {
   translate([0, outer_y - wall_width, 0]) cube([outer_x, wall_width, wall_height]);
 }
 module bottom_wall() {
-  cube([outer_x, wall_width, wall_height]);
+  module wall() {
+    cube([outer_x, wall_width, wall_height]);
+  }
+
+  module usb_cutout() {
+    width = 15.2;
+    start_x = 198 - 13 - width;
+    start_z = 4;
+    height = 80;
+    translate([start_x, -15, start_z]) cube([width, 30, height]);
+  }
+
+  difference() {
+    wall();
+    usb_cutout();
+  }
 }
 module right_wall() {
   translate([0, 0, 0]) cube([wall_width, outer_y, wall_height]);
