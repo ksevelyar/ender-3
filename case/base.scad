@@ -4,10 +4,9 @@ outer_x = 215;
 legs_height = 6;
 wall_width = 2;
 wall_height = 10;
+bottom_height = 2;
 
 module bottom() {
-  bottom_height = 2;
-
   module bottom_mounts() {
     translate([32, 32, -0.1]) cylinder(d = 4, h = bottom_height + 1);
     translate([32, 82, -0.1]) cylinder(d = 4, h = bottom_height + 1);
@@ -112,20 +111,15 @@ module bottom_wall() {
     translate([start_x, -15, start_z]) cube([width, 30, height]);
   }
 
-  module bed_sleeve_cutout() {
+  module sleeve_cutout(start_x) {
     width = 6;
-    start_x = 117;
-    start_z = 4;
+    start_z = 6;
     height = 80;
-    translate([start_x, -15, start_z]) cube([width, 30, height]);
-  }
 
-  module hotend_sleeve_cutout() {
-    width = 6;
-    start_x = 127;
-    start_z = 4;
-    height = 80;
-    translate([start_x, -15, start_z]) cube([width, 30, height]);
+    hull() {
+      translate([start_x, 15, start_z]) rotate([90,0,0]) cylinder(d=width,h=30);
+      translate([start_x, 15, 80]) rotate([90,0,0]) cylinder(d=width,h=30);
+    }
   }
 
   module x_and_extruder_cutout() {
@@ -156,8 +150,8 @@ module bottom_wall() {
     wall();
     usb_cutout();
 
-    bed_sleeve_cutout();
-    hotend_sleeve_cutout();
+    sleeve_cutout(130);
+    sleeve_cutout(120);
 
     x_and_extruder_cutout();
     y_cutout();
@@ -168,7 +162,28 @@ module right_wall() {
   translate([0, 0, 0]) cube([wall_width, outer_y, wall_height]);
 }
 module left_wall() {
-  translate([outer_x - wall_width, 0, 0]) cube([wall_width, outer_y, wall_height]);
+  module wall() {
+    translate([outer_x - wall_width, 0, 0]) cube([wall_width, outer_y, wall_height]);
+  }
+
+  module avg16_cutout(y) {
+    hull() {
+      translate([outer_x - 15, y, bottom_height * 2]) rotate([0,90,0]) cylinder(d=4,h=30);
+      translate([outer_x - 15, y, 100]) rotate([0,90,0]) cylinder(d=4,h=30);
+    }
+  }
+
+  difference() {
+    wall();
+    avg16_cutout(9);
+    avg16_cutout(18);
+    avg16_cutout(27);
+
+    avg16_cutout(49);
+    avg16_cutout(58);
+    avg16_cutout(67);
+    avg16_cutout(76);
+  }
 }
 
 bottom();
