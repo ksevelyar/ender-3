@@ -112,9 +112,56 @@ module bottom_wall() {
     translate([start_x, -15, start_z]) cube([width, 30, height]);
   }
 
+  module bed_sleeve_cutout() {
+    width = 6;
+    start_x = 117;
+    start_z = 4;
+    height = 80;
+    translate([start_x, -15, start_z]) cube([width, 30, height]);
+  }
+
+  module hotend_sleeve_cutout() {
+    width = 6;
+    start_x = 127;
+    start_z = 4;
+    height = 80;
+    translate([start_x, -15, start_z]) cube([width, 30, height]);
+  }
+
+  module x_and_extruder_cutout() {
+    width = 1.2;
+    start_x = 50;
+    start_z = 4;
+    height = 80;
+    translate([start_x, -15, start_z]) cube([width, 30, height]);
+  }
+
+  module y_cutout() {
+    width = 1.2;
+    start_x = 40;
+    start_z = 4;
+    height = 80;
+    translate([start_x, -15, start_z]) cube([width, 30, height]);
+  }
+
+  module z_cutout() {
+    width = 1.2;
+    start_x = 30;
+    start_z = 4;
+    height = 80;
+    translate([start_x, -15, start_z]) cube([width, 30, height]);
+  }
+
   difference() {
     wall();
     usb_cutout();
+
+    bed_sleeve_cutout();
+    hotend_sleeve_cutout();
+
+    x_and_extruder_cutout();
+    y_cutout();
+    z_cutout();
   }
 }
 module right_wall() {
