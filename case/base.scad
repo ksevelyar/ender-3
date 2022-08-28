@@ -99,16 +99,16 @@ module top_wall() {
   translate([0, outer_y - wall_width, 0]) cube([outer_x, wall_width, wall_height]);
 }
 module bottom_wall() {
+  usb_width = 15.2;
   module wall() {
     cube([outer_x, wall_width, wall_height]);
   }
 
   module usb_cutout() {
-    width = 15.2;
-    start_x = 198 - 13 - width;
+    start_x = 198 - 13 - usb_width;
     start_z = 4;
     height = 80;
-    translate([start_x, -15, start_z]) cube([width, 30, height]);
+    translate([start_x, -15, start_z]) cube([usb_width, 30, height]);
   }
 
   module sleeve_cutout(start_x) {
@@ -122,25 +122,8 @@ module bottom_wall() {
     }
   }
 
-  module x_and_extruder_cutout() {
+  module ribbon_cutout(start_x) {
     width = 1.2;
-    start_x = 50;
-    start_z = 4;
-    height = 80;
-    translate([start_x, -15, start_z]) cube([width, 30, height]);
-  }
-
-  module y_cutout() {
-    width = 1.2;
-    start_x = 40;
-    start_z = 4;
-    height = 80;
-    translate([start_x, -15, start_z]) cube([width, 30, height]);
-  }
-
-  module z_cutout() {
-    width = 1.2;
-    start_x = 30;
     start_z = 4;
     height = 80;
     translate([start_x, -15, start_z]) cube([width, 30, height]);
@@ -150,12 +133,12 @@ module bottom_wall() {
     wall();
     usb_cutout();
 
-    sleeve_cutout(130);
-    sleeve_cutout(120);
+    sleeve_cutout(outer_x / 2 + 5);
+    sleeve_cutout(outer_x / 2 - 5);
 
-    x_and_extruder_cutout();
-    y_cutout();
-    z_cutout();
+    ribbon_cutout(30);
+    ribbon_cutout(30 + usb_width / 2);
+    ribbon_cutout(30 + usb_width);
   }
 }
 module right_wall() {
