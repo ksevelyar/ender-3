@@ -4,7 +4,7 @@ outer_x = 215;
 legs_height = 6;
 wall_width = 2;
 wall_height = 15;
-bottom_height = 2;
+bottom_height = 1.4;
 
 module bottom() {
   module bottom_mounts() {
