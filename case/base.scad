@@ -3,7 +3,7 @@ outer_y = 115;
 outer_x = 215;
 legs_height = 6;
 wall_width = 2;
-wall_height = 10;
+wall_height = 15;
 bottom_height = 2;
 
 module bottom() {
@@ -96,7 +96,16 @@ module antenna_mount() {
 }
 
 module top_wall() {
-  translate([0, outer_y - wall_width, 0]) cube([outer_x, wall_width, wall_height]);
+  module wall() translate([0, outer_y - wall_width, 0]) cube([outer_x, wall_width, wall_height]);
+
+  module skr_sd_cutout() {
+    translate([57, outer_y - 10, legs_height]) cube([20, 20, 100]);
+  }
+
+  difference() {
+    wall();
+    skr_sd_cutout();
+  }
 }
 module bottom_wall() {
   usb_width = 15.2;
