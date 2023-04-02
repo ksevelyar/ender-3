@@ -1,6 +1,6 @@
 # Hardware
 
-* Ender 3 pro
+* [Ender 3 pro](https://github.com/Creality3DPrinting/Ender-3)
 * [Banana Pi M2 Zero](https://wiki.banana-pi.org/Banana_Pi_BPI-M2_ZERO)
 * SKR 1.4 Turbo + TMC2209
 * Auto bed leveling with 3DTouch [[mount]](https://www.thingiverse.com/thing:3003725/files)
