@@ -2117,9 +2117,9 @@
 #if ENABLED(LIN_ADVANCE)
   // NOTE: shorter bowden
   #if ENABLED(DISTINCT_E_FACTORS)
-    #define ADVANCE_K { 0.3 }    // (mm) Compression length per 1mm/s extruder speed, per extruder
+    #define ADVANCE_K { 0.2 }    // (mm) Compression length per 1mm/s extruder speed, per extruder
   #else
-    #define ADVANCE_K 0.3        // (mm) Compression length applying to all extruders
+    #define ADVANCE_K 0.2        // (mm) Compression length applying to all extruders
   #endif
   //#define ADVANCE_K_EXTRA       // Add a second linear advance constant, configurable with M900 L.
   //#define LA_DEBUG              // Print debug information to serial during operation. Disable for production use.
@@ -2405,7 +2405,8 @@
 
 // The ASCII buffer for serial input
 #define MAX_CMD_SIZE 96
-#define BUFSIZE 4
+// NOTE: changed to fix arc stuttering
+#define BUFSIZE 16
 
 // Transmission to Host Buffer Size
 // To save 386 bytes of flash (and TX_BUFFER_SIZE+3 bytes of RAM) set to 0.

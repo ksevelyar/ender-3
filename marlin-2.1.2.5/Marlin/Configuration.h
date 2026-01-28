@@ -116,7 +116,7 @@
  *
  * :[2400, 9600, 19200, 38400, 57600, 115200, 250000, 500000, 1000000]
  */
-#define BAUDRATE 115200
+#define BAUDRATE 250000
 
 //#define BAUD_RATE_GCODE     // Enable G-code M575 to set the baud rate
 
@@ -688,9 +688,10 @@
     #define DEFAULT_Ki_LIST {   1.08,   1.08 }
     #define DEFAULT_Kd_LIST { 114.00, 114.00 }
   #else
-    #define DEFAULT_Kp  22.20
-    #define DEFAULT_Ki   1.08
-    #define DEFAULT_Kd 114.00
+    // NOTE: titanium + copper heatbreak
+    #define DEFAULT_Kp  27.42
+    #define DEFAULT_Ki   2.54
+    #define DEFAULT_Kd 74.05
   #endif
 #else
   #define BANG_MAX 255    // Limit hotend current while in bang-bang mode; 255=full current
@@ -1198,7 +1199,8 @@
  * Override with M92
  *                                      X, Y, Z [, I [, J [, K...]]], E0 [, E1[, E2...]]
  */
-#define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 400, 93 }
+// NOTE: bmg 3:1
+#define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 400, 415 }
 
 /**
  * Default Max Feed Rate (linear=mm/s, rotational=°/s)
@@ -1514,7 +1516,8 @@
  *     O-- FRONT --+
  */
 /*#define NOZZLE_TO_PROBE_OFFSET { -45, -8, 0 }*/
-#define NOZZLE_TO_PROBE_OFFSET { -42, -5, -2.95 }
+// NOTE: short heatbreak
+#define NOZZLE_TO_PROBE_OFFSET { -42, -5, -2.90 }
 
 // Most probes should stay away from the edges of the bed, but
 // with NOZZLE_AS_PROBE this can be negative for a wider probing area.
@@ -1994,7 +1997,8 @@
 #if EITHER(AUTO_BED_LEVELING_LINEAR, AUTO_BED_LEVELING_BILINEAR)
 
   // Set the number of grid points per dimension.
-  #define GRID_MAX_POINTS_X 5
+  // NOTE: changed to 3
+  #define GRID_MAX_POINTS_X 3
   #define GRID_MAX_POINTS_Y GRID_MAX_POINTS_X
 
   // Probe along the Y axis, advancing X after each column
@@ -2586,7 +2590,8 @@
 // If you have a speaker that can produce tones, enable it here.
 // By default Marlin assumes you have a buzzer with a fixed frequency.
 //
-#define SPEAKER
+// NOTE: disable speaker
+// #define SPEAKER
 
 //
 // The duration and frequency for the UI feedback sound.
