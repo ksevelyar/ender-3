@@ -1199,8 +1199,8 @@
  * Override with M92
  *                                      X, Y, Z [, I [, J [, K...]]], E0 [, E1[, E2...]]
  */
-// NOTE: bmg 3:1
-#define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 400, 415 }
+// NOTE: bmg 3:1, calibrated to 403 at 06.02.26
+#define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 400, 403 }
 
 /**
  * Default Max Feed Rate (linear=mm/s, rotational=°/s)
@@ -1517,7 +1517,7 @@
  */
 /*#define NOZZLE_TO_PROBE_OFFSET { -45, -8, 0 }*/
 // NOTE: short heatbreak
-#define NOZZLE_TO_PROBE_OFFSET { -42, -5, -2.90 }
+#define NOZZLE_TO_PROBE_OFFSET { -42, -5, -2.89 }
 
 // Most probes should stay away from the edges of the bed, but
 // with NOZZLE_AS_PROBE this can be negative for a wider probing area.
@@ -1731,7 +1731,7 @@
 
 // The size of the printable area
 #define X_BED_SIZE 235
-#define Y_BED_SIZE 235
+#define Y_BED_SIZE 210
 
 // Travel limits (linear=mm, rotational=°) after homing, corresponding to endstop positions.
 #define X_MIN_POS 0
@@ -1998,7 +1998,7 @@
 
   // Set the number of grid points per dimension.
   // NOTE: changed to 3
-  #define GRID_MAX_POINTS_X 3
+  #define GRID_MAX_POINTS_X 4
   #define GRID_MAX_POINTS_Y GRID_MAX_POINTS_X
 
   // Probe along the Y axis, advancing X after each column
@@ -2600,7 +2600,8 @@
 // Note: Test audio output with the G-Code:
 //  M300 S<frequency Hz> P<duration ms>
 //
-//#define LCD_FEEDBACK_FREQUENCY_DURATION_MS 2
+// NOTE: disable speaker
+#define LCD_FEEDBACK_FREQUENCY_DURATION_MS 0
 //#define LCD_FEEDBACK_FREQUENCY_HZ 5000
 
 //=============================================================================
