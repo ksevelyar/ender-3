@@ -104,6 +104,11 @@
             };
           };
 
+          environment.etc."ssh/ssh_host_ed25519_key".source = "/home/ksevelyar/.ssh/guest_ed25519_key";
+          environment.etc."ssh/ssh_host_ed25519_key".mode = "0600";
+          environment.etc."ssh/ssh_host_ed25519_key.pub".source = "/home/ksevelyar/.ssh/guest_ed25519_key.pub";
+          environment.etc."ssh/ssh_host_ed25519_key.pub".mode = "0644";
+
           age.secrets.wifi-skynet-2.file = ./secrets/wifi-skynet-2.age;
 
           networking = {
@@ -123,7 +128,7 @@
 
           sdImage.populateFirmwareCommands = let
             uboot = pkgs.buildUBoot {
-              defconfig = "Sinovoip_BPI_M2_defconfig";
+              defconfig = "bananapi_m2_zero_defconfig";
               extraMeta.platforms = ["armv7l-linux"];
               filesToInstall = ["u-boot-sunxi-with-spl.bin"];
             };
