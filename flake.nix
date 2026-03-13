@@ -3,7 +3,6 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
-
     agenix.url = "github:ryantm/agenix";
     agenix.inputs.nixpkgs.follows = "nixpkgs";
   };
@@ -19,10 +18,8 @@
   in {
     nixosConfigurations.bpi-m2-zero = lib.nixosSystem {
       system = buildSystem;
-
       modules = [
         agenix.nixosModules.default
-
         ({
           pkgs,
           modulesPath,
@@ -35,26 +32,16 @@
           ];
 
           boot = {
-            consoleLogLevel = 7;
             kernelPackages = pkgs.linuxPackages_latest;
+            consoleLogLevel = 7;
             loader.grub.enable = false;
             loader.generic-extlinux-compatible.enable = true;
-            kernelParams = [
-              "console=ttyS0,115200n8"
-              "console=tty0"
-            ];
-            supportedFilesystems = lib.mkForce [
-              "vfat"
-              "ext4"
-            ];
+            kernelParams = ["console=ttyS0,115200n8" "console=tty0"];
+            supportedFilesystems = lib.mkForce ["vfat" "ext4"];
           };
-
           documentation.enable = false;
           documentation.man.generateCaches = false;
-
           environment.systemPackages = with pkgs; [
-            strace
-            rsync
           ];
 
           environment.defaultPackages = [];
@@ -79,10 +66,18 @@
             config.allowUnsupportedSystem = true;
             crossSystem.system = "armv7l-linux";
 
+            # NOTE: patch uboot to use fdt_addr_r=0x45000000
+            # fix for ERROR: FDT image overlaps OS image (OS=42000000..4308b200)
             overlays = [
-              (self: super: {
-                efivar = pkgs.runCommand "empty-efivar" {} "mkdir $out";
-                efibootmgr = pkgs.runCommand "empty-efibootmgr" {} "mkdir $out";
+              (final: prev: {
+                ubootBananaPim2Zero = prev.ubootBananaPim2Zero.overrideAttrs (old: {
+                  postPatch =
+                    (old.postPatch or "")
+                    + ''
+                      substituteInPlace include/configs/sunxi-common.h \
+                        --replace-fail 'SDRAM_OFFSET(3000000)' 'SDRAM_OFFSET(5000000)'
+                    '';
+                });
               })
             ];
           };
@@ -122,10 +117,7 @@
 
           networking = {
             hostName = "printer";
-            firewall.enable = false;
             useDHCP = true;
-            enableIPv6 = false;
-
             wireless = {
               enable = true;
 
@@ -135,30 +127,20 @@
             };
           };
 
+          hardware.bluetooth.enable = false;
+          # hardware.firmware = with pkgs; [linux-firmware];
+
           sdImage = {
             populateRootCommands = ''
               mkdir -p ./files/boot
               ${config.boot.loader.generic-extlinux-compatible.populateCmd} -c ${config.system.build.toplevel} -d ./files/boot
             '';
-
             populateFirmwareCommands = ''
               cp ${pkgs.ubootBananaPim2Zero}/u-boot-sunxi-with-spl.bin firmware/u-boot-sunxi-with-spl.bin
             '';
-
             postBuildCommands = ''
-                set -e
-
-                dd if=firmware/u-boot-sunxi-with-spl.bin of=$img bs=1024 seek=8 conv=notrunc
-
-                cat > /tmp/uboot-env.txt <<'EOF'
-              fdt_addr_r=0x45000000
-              EOF
-
-                ${pkgs.buildPackages.ubootTools}/bin/mkenvimage -s 0x4000 -o /tmp/uboot.env /tmp/uboot-env.txt
-
-                dd if=/tmp/uboot.env of=$img bs=1024 seek=1024 conv=notrunc
+              dd if=firmware/u-boot-sunxi-with-spl.bin of=$img bs=1024 seek=8 conv=notrunc
             '';
-
             compressImage = false;
           };
         })
@@ -167,6 +149,10 @@
 
     packages.${buildSystem} = {
       sdImage = self.nixosConfigurations.bpi-m2-zero.config.system.build.sdImage;
+      # NOTE: inspect uboot env vars with
+      # nix build .#uboot
+      # strings result/u-boot-sunxi-with-spl.bin | grep "fdt_addr_r"
+      uboot = self.nixosConfigurations.bpi-m2-zero.pkgs.ubootBananaPim2Zero;
     };
   };
 }
