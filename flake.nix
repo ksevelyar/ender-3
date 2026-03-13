@@ -1,5 +1,5 @@
 {
-  description = "NixOS sdImage for Banana Pi M2 Zero (Allwinner H2+)";
+  description = "NixOS sdImage for Banana Pi M2 Zero (Allwinner H3)";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
@@ -30,11 +30,27 @@
           ...
         }: {
           imports = [
-            (modulesPath + "/installer/sd-card/sd-image-armv7l-multiplatform.nix")
+            (modulesPath + "/installer/sd-card/sd-image.nix")
             (modulesPath + "/profiles/minimal.nix")
           ];
 
+          boot = {
+            consoleLogLevel = 7;
+            kernelPackages = pkgs.linuxPackages_latest;
+            loader.grub.enable = false;
+            loader.generic-extlinux-compatible.enable = true;
+            kernelParams = [
+              "console=ttyS0,115200n8"
+              "console=tty0"
+            ];
+            supportedFilesystems = lib.mkForce [
+              "vfat"
+              "ext4"
+            ];
+          };
+
           documentation.enable = false;
+          documentation.man.generateCaches = false;
 
           environment.systemPackages = with pkgs; [
             strace
@@ -72,13 +88,6 @@
           };
 
           system.stateVersion = "25.11";
-
-          boot.supportedFilesystems = lib.mkForce [
-            "vfat"
-            "ext4"
-          ];
-
-          hardware.enableRedistributableFirmware = true;
 
           services.openssh = {
             enable = true;
@@ -126,20 +135,32 @@
             };
           };
 
-          sdImage.populateFirmwareCommands = let
-            uboot = pkgs.buildUBoot {
-              defconfig = "bananapi_m2_zero_defconfig";
-              extraMeta.platforms = ["armv7l-linux"];
-              filesToInstall = ["u-boot-sunxi-with-spl.bin"];
-            };
-          in
-            lib.mkForce ''
-              cp ${uboot}/u-boot-sunxi-with-spl.bin firmware/u-boot-sunxi-with-spl.bin
+          sdImage = {
+            populateRootCommands = ''
+              mkdir -p ./files/boot
+              ${config.boot.loader.generic-extlinux-compatible.populateCmd} -c ${config.system.build.toplevel} -d ./files/boot
             '';
 
-          sdImage.postBuildCommands = lib.mkForce ''
-            dd if=firmware/u-boot-sunxi-with-spl.bin of=$img bs=1024 seek=8 conv=notrunc
-          '';
+            populateFirmwareCommands = ''
+              cp ${pkgs.ubootBananaPim2Zero}/u-boot-sunxi-with-spl.bin firmware/u-boot-sunxi-with-spl.bin
+            '';
+
+            postBuildCommands = ''
+                set -e
+
+                dd if=firmware/u-boot-sunxi-with-spl.bin of=$img bs=1024 seek=8 conv=notrunc
+
+                cat > /tmp/uboot-env.txt <<'EOF'
+              fdt_addr_r=0x45000000
+              EOF
+
+                ${pkgs.buildPackages.ubootTools}/bin/mkenvimage -s 0x4000 -o /tmp/uboot.env /tmp/uboot-env.txt
+
+                dd if=/tmp/uboot.env of=$img bs=1024 seek=1024 conv=notrunc
+            '';
+
+            compressImage = false;
+          };
         })
       ];
     };
