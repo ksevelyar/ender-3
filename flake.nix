@@ -161,6 +161,10 @@
             };
           };
 
+          zramSwap = {
+            enable = true;
+            algorithm = "zstd";
+          };
           hardware.bluetooth.enable = false;
           powerManagement = {
             enable = true;
