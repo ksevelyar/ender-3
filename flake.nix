@@ -75,9 +75,17 @@
             config.allowUnsupportedSystem = true;
             crossSystem.system = "armv7l-linux";
 
-            # NOTE: patch uboot to use fdt_addr_r=0x45000000
-            # fix for ERROR: FDT image overlaps OS image (OS=42000000..4308b200)
             overlays = [
+              (final: prev: {
+                python3 = prev.python312;
+
+                klipper = prev.klipper.override {
+                  python3 = final.python312;
+                };
+              })
+
+              # NOTE: patch uboot to use fdt_addr_r=0x45000000
+              # fix for ERROR: FDT image overlaps OS image (OS=42000000..4308b200)
               (final: prev: {
                 ubootBananaPim2Zero = prev.ubootBananaPim2Zero.overrideAttrs (old: {
                   postPatch =
@@ -114,6 +122,26 @@
               domain = true;
               workstation = true;
             };
+          };
+
+          services.klipper = {
+            enable = true;
+            user = "klipper";
+            group = "klipper";
+            firmwares.mcu = {
+              enable = true;
+              configFile = ./klipper/mcu;
+            };
+            configFile = ./klipper/printer.cfg;
+          };
+          users.users.klipper = {
+            isSystemUser = true;
+            group = "klipper";
+            extraGroups = ["dialout"];
+          };
+          users.groups.klipper = {};
+          services.fluidd = {
+            enable = true;
           };
 
           users.defaultUserShell = pkgs.fish;
@@ -191,7 +219,7 @@
     };
 
     packages.${buildSystem} = {
-      sdImage = self.nixosConfigurations.bpi-m2-zero.config.system.build.sdImage;
+      sdImage = self.nixosConfigurations.printer.config.system.build.sdImage;
 
       # NOTE: inspect uboot env vars with
       # nix build .#uboot
