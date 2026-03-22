@@ -8,7 +8,6 @@
   };
 
   outputs = {
-    self,
     nixpkgs,
     agenix,
     ...
@@ -54,11 +53,20 @@
             crossSystem.system = "armv7l-linux";
             overlays = [
               (final: prev: {
-                ubootBananaPim2Zero = prev.buildUBoot {
-                  defconfig = "bananapi_m2_zero_defconfig";
-                  filesToInstall = ["u-boot-sunxi-with-spl.bin"];
-                  extraMeta.platforms = ["armv7l-linux"];
-                };
+                ubootBananaPim2Zero =
+                  (prev.buildUBoot {
+                    defconfig = "bananapi_m2_zero_defconfig";
+                    filesToInstall = ["u-boot-sunxi-with-spl.bin"];
+                    extraMeta.platforms = ["armv7l-linux"];
+                  }).overrideAttrs (old: {
+                    # Fix for: ERROR: FDT image overlaps OS image (OS=42000000..4308b200)
+                    postPatch =
+                      (old.postPatch or "")
+                      + ''
+                        substituteInPlace include/configs/sunxi-common.h \
+                          --replace-fail 'SDRAM_OFFSET(3000000)' 'SDRAM_OFFSET(5000000)'
+                      '';
+                  });
               })
             ];
           };
@@ -68,6 +76,7 @@
             loader.grub.enable = false;
             loader.generic-extlinux-compatible.enable = true;
             loader.generic-extlinux-compatible.configurationLimit = 1;
+            kernelPackages = pkgs.linuxPackagesFor pkgs.linux_latest;
             kernelParams = ["console=tty0"];
             supportedFilesystems = lib.mkForce ["vfat" "ext4"];
           };
@@ -168,7 +177,7 @@
               enable = true;
               environmentFile = config.age.secrets.wifi.path;
               networks.skynet-2 = {
-                psk = "@skynet-2@";
+                psk = "@SKYNET_2@";
               };
             };
           };
