@@ -14,6 +14,42 @@
   }: let
     lib = nixpkgs.lib;
 
+    crossOverlay = final: prev: {
+      ubootBananaPim2Zero =
+        (prev.buildUBoot {
+          defconfig = "bananapi_m2_zero_defconfig";
+          filesToInstall = ["u-boot-sunxi-with-spl.bin"];
+          extraMeta.platforms = ["armv7l-linux"];
+        }).overrideAttrs (old: {
+          # NOTE: fix for FDT image overlaps OS image (OS=42000000..4308b200)
+          postPatch = ''
+            ${old.postPatch or ""}
+            substituteInPlace include/configs/sunxi-common.h --replace-fail 'SDRAM_OFFSET(3000000)' 'SDRAM_OFFSET(5000000)'
+          '';
+        });
+
+      python311 = prev.python311.override {
+        packageOverrides = pself: psuper: {
+          # NOTE: libcurl.so: file not recognized: file format not recognized
+          pycurl = psuper.pycurl.overrideAttrs (old: {
+            preConfigure = ''
+              ${old.preConfigure}
+              export PYCURL_CURL_CONFIG="${final.curl.dev}/bin/curl-config"
+            '';
+          });
+
+          # NOTE: libgeos_c.so: file not recognized: file format not recognized
+          shapely = psuper.shapely.overrideAttrs (old: {
+            preConfigure = ''
+              ${old.preConfigure or ""}
+              export GEOS_CONFIG="${final.geos}/bin/geos-config"
+            '';
+          });
+        };
+      };
+    };
+
+    # Firmware built on x86_64 host (newer gcc-arm-embedded breaks armv7l)
     klipperFirmware = pkgs:
       (pkgs.klipper-firmware.override {
         firmwareConfig = ./klipper/mcu;
@@ -34,7 +70,7 @@
           config,
           ...
         }: let
-          printerKey = pkgs.writeText "printer-agenix-key" (builtins.readFile /home/ksevelyar/.ssh/guest_ed25519_key);
+          printerAgenixKey = pkgs.writeText "printer-agenix-key" (builtins.readFile /home/ksevelyar/.ssh/guest_ed25519_key);
         in {
           imports = [
             (modulesPath + "/installer/sd-card/sd-image.nix")
@@ -47,29 +83,13 @@
             secrets.root-password.file = ./secrets/root-password.age;
           };
 
-          system.stateVersion = "24.05";
           nixpkgs = {
             config.allowUnsupportedSystem = true;
             crossSystem.system = "armv7l-linux";
-            overlays = [
-              (final: prev: {
-                ubootBananaPim2Zero =
-                  (prev.buildUBoot {
-                    defconfig = "bananapi_m2_zero_defconfig";
-                    filesToInstall = ["u-boot-sunxi-with-spl.bin"];
-                    extraMeta.platforms = ["armv7l-linux"];
-                  }).overrideAttrs (old: {
-                    # Fix for: ERROR: FDT image overlaps OS image (OS=42000000..4308b200)
-                    postPatch =
-                      (old.postPatch or "")
-                      + ''
-                        substituteInPlace include/configs/sunxi-common.h \
-                          --replace-fail 'SDRAM_OFFSET(3000000)' 'SDRAM_OFFSET(5000000)'
-                      '';
-                  });
-              })
-            ];
+            overlays = [crossOverlay];
           };
+
+          system.stateVersion = "24.05";
 
           boot = {
             consoleLogLevel = 1;
@@ -83,6 +103,7 @@
 
           documentation.enable = false;
           documentation.man.generateCaches = false;
+
           environment.systemPackages = with pkgs; [
             tmux
             vim
@@ -95,11 +116,13 @@
             fd
             fzf
             ripgrep
+            zip
             tealdeer
             bottom
             macchina
           ];
           environment.defaultPackages = [];
+
           nix.extraOptions = "experimental-features = nix-command flakes";
 
           services.openssh = {
@@ -113,6 +136,7 @@
 
           # NOTE: fix setgroups crash on arm
           systemd.services.avahi-daemon.serviceConfig.SystemCallFilter = lib.mkForce [];
+
           services.avahi = {
             enable = true;
             nssmdns4 = true;
@@ -133,19 +157,46 @@
             firmwares.mcu.enable = false;
             configFile = ./klipper/printer.cfg;
           };
+
           users.users.klipper = {
             isSystemUser = true;
             group = "klipper";
             extraGroups = ["dialout"];
           };
           users.groups.klipper = {};
+
+          # NOTE: upload big files via fluid
+          services.nginx.clientMaxBodySize = "100m";
           services.fluidd.enable = true;
+
+          users.users.moonraker.extraGroups = ["klipper"];
+          security.polkit.enable = true;
+
+          services.moonraker = {
+            enable = true;
+            address = "0.0.0.0";
+            allowSystemControl = true;
+            settings = {
+              octoprint_compat = {};
+              authorization = {
+                force_logins = false;
+                trusted_clients = ["0.0.0.0/0"];
+                cors_domains = ["*"];
+              };
+              file_manager = {
+                enable_object_processing = true;
+              };
+            };
+          };
+
+          systemd.tmpfiles.rules = [
+            "d /var/lib/moonraker/logs 0775 moonraker moonraker -"
+          ];
 
           users.defaultUserShell = pkgs.fish;
           programs.fish.enable = true;
           programs.fish.interactiveShellInit = ''
             set fish_greeting
-
             set temp (cat /sys/devices/virtual/thermal/thermal_zone0/temp 2>/dev/null)
             test -n "$temp"; and echo "🌡️ "(math -s 0 "$temp / 1000")"C"
           '';
@@ -186,7 +237,9 @@
             enable = true;
             algorithm = "zstd";
           };
+
           hardware.bluetooth.enable = false;
+
           powerManagement = {
             enable = true;
             cpuFreqGovernor = "powersave";
@@ -196,20 +249,13 @@
             populateRootCommands = ''
               mkdir -p ./files/root/.ssh
               chmod 700 ./files/root/.ssh
-              cp "${printerKey}" ./files/root/.ssh/printer-agenix-key
+              cp "${printerAgenixKey}" ./files/root/.ssh/printer-agenix-key
               chmod 600 ./files/root/.ssh/printer-agenix-key
-
               mkdir -p ./files/boot
               ${config.boot.loader.generic-extlinux-compatible.populateCmd} -c ${config.system.build.toplevel} -d ./files/boot
             '';
-
-            populateFirmwareCommands = ''
-              echo "🐗"
-            '';
-
-            postBuildCommands = ''
-              dd if=${pkgs.ubootBananaPim2Zero}/u-boot-sunxi-with-spl.bin of=$img bs=1024 seek=8 conv=notrunc
-            '';
+            populateFirmwareCommands = "echo 'NOTE: not used, but still required for sdImage 🐗'";
+            postBuildCommands = "dd if=${pkgs.ubootBananaPim2Zero}/u-boot-sunxi-with-spl.bin of=$img bs=1024 seek=8 conv=notrunc";
             compressImage = false;
           };
         })

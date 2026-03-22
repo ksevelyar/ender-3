@@ -13,7 +13,7 @@ nix build .#klipper-firmware
 
 ## sd image
 ```
-nix build .#nixosConfigurations.printer.config.system.build.sdImage --show-trace --impure --refresh
+nix build .#nixosConfigurations.printer.config.system.build.sdImage --show-trace --impure
 ```
 
 ```
