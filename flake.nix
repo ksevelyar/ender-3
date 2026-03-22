@@ -2,8 +2,8 @@
   description = "NixOS sdImage for Banana Pi M2 Zero";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
-    agenix.url = "github:ryantm/agenix";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
+    agenix.url = "github:ryantm/agenix/caab0435e181becfd66c24e5ea5ae56ac837afbe";
     agenix.inputs.nixpkgs.follows = "nixpkgs";
   };
 
@@ -13,11 +13,20 @@
     agenix,
     ...
   }: let
-    buildSystem = "x86_64-linux";
     lib = nixpkgs.lib;
+
+    klipperFirmware = pkgs:
+      (pkgs.klipper-firmware.override {
+        firmwareConfig = ./klipper/mcu;
+      }).overrideAttrs (old: {
+        # NOTE: versions >11 are broken for armv7l-linux
+        nativeBuildInputs = [pkgs.gcc-arm-embedded-11] ++ (old.nativeBuildInputs or []);
+      });
   in {
+    packages.x86_64-linux.klipper-firmware = klipperFirmware nixpkgs.legacyPackages.x86_64-linux;
+
     nixosConfigurations.printer = lib.nixosSystem {
-      system = buildSystem;
+      system = "x86_64-linux";
       modules = [
         agenix.nixosModules.default
         ({
@@ -25,16 +34,33 @@
           modulesPath,
           config,
           ...
-        }: {
+        }: let
+          printerKey = pkgs.writeText "printer-agenix-key" (builtins.readFile /home/ksevelyar/.ssh/guest_ed25519_key);
+        in {
           imports = [
             (modulesPath + "/installer/sd-card/sd-image.nix")
             (modulesPath + "/profiles/minimal.nix")
           ];
 
           age = {
-            identityPaths = ["/home/ksevelyar/.ssh/guest_ed25519_key"];
+            identityPaths = ["/root/.ssh/printer-agenix-key"];
             secrets.wifi.file = ./secrets/wifi.age;
             secrets.root-password.file = ./secrets/root-password.age;
+          };
+
+          system.stateVersion = "24.05";
+          nixpkgs = {
+            config.allowUnsupportedSystem = true;
+            crossSystem.system = "armv7l-linux";
+            overlays = [
+              (final: prev: {
+                ubootBananaPim2Zero = prev.buildUBoot {
+                  defconfig = "bananapi_m2_zero_defconfig";
+                  filesToInstall = ["u-boot-sunxi-with-spl.bin"];
+                  extraMeta.platforms = ["armv7l-linux"];
+                };
+              })
+            ];
           };
 
           boot = {
@@ -42,17 +68,19 @@
             loader.grub.enable = false;
             loader.generic-extlinux-compatible.enable = true;
             loader.generic-extlinux-compatible.configurationLimit = 1;
-            kernelParams = ["console=ttyS0,115200n8" "console=tty0"];
+            kernelParams = ["console=tty0"];
             supportedFilesystems = lib.mkForce ["vfat" "ext4"];
           };
 
           documentation.enable = false;
           documentation.man.generateCaches = false;
           environment.systemPackages = with pkgs; [
+            tmux
+            vim
             rsync
+            git
             lm_sensors
             powertop
-            vim
             zoxide
             bat
             fd
@@ -62,44 +90,8 @@
             bottom
             macchina
           ];
-
           environment.defaultPackages = [];
-
-          nix = {
-            daemonCPUSchedPolicy = "idle";
-            extraOptions = ''
-              experimental-features = nix-command flakes
-            '';
-          };
-          nixpkgs = {
-            config.allowUnsupportedSystem = true;
-            crossSystem.system = "armv7l-linux";
-
-            overlays = [
-              (final: prev: {
-                python3 = prev.python312;
-
-                klipper = prev.klipper.override {
-                  python3 = final.python312;
-                };
-              })
-
-              # NOTE: patch uboot to use fdt_addr_r=0x45000000
-              # fix for ERROR: FDT image overlaps OS image (OS=42000000..4308b200)
-              (final: prev: {
-                ubootBananaPim2Zero = prev.ubootBananaPim2Zero.overrideAttrs (old: {
-                  postPatch =
-                    (old.postPatch or "")
-                    + ''
-                      substituteInPlace include/configs/sunxi-common.h \
-                        --replace-fail 'SDRAM_OFFSET(3000000)' 'SDRAM_OFFSET(5000000)'
-                    '';
-                });
-              })
-            ];
-          };
-
-          system.stateVersion = "25.11";
+          nix.extraOptions = "experimental-features = nix-command flakes";
 
           services.openssh = {
             enable = true;
@@ -128,10 +120,8 @@
             enable = true;
             user = "klipper";
             group = "klipper";
-            firmwares.mcu = {
-              enable = true;
-              configFile = ./klipper/mcu;
-            };
+            # NOTE: not supported for armv7l-linux
+            firmwares.mcu.enable = false;
             configFile = ./klipper/printer.cfg;
           };
           users.users.klipper = {
@@ -140,9 +130,7 @@
             extraGroups = ["dialout"];
           };
           users.groups.klipper = {};
-          services.fluidd = {
-            enable = true;
-          };
+          services.fluidd.enable = true;
 
           users.defaultUserShell = pkgs.fish;
           programs.fish.enable = true;
@@ -161,14 +149,12 @@
               ];
               hashedPasswordFile = config.age.secrets.root-password.path;
             };
-
             ksevelyar = {
               isNormalUser = true;
               openssh.authorizedKeys.keys = [
                 "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOrgLo+NfYI06fdY1BamC5o2tNeRlw1ZuPAkyy41w0Ir ksevelyar@gmail.com"
               ];
               hashedPasswordFile = config.age.secrets.root-password.path;
-
               extraGroups = ["wheel"];
             };
           };
@@ -176,15 +162,13 @@
           networking = {
             usePredictableInterfaceNames = false;
             hostName = "printer";
-
             useDHCP = false;
             interfaces.wlan0.useDHCP = true;
-
             wireless = {
               enable = true;
-              secretsFile = config.age.secrets.wifi.path;
-              networks."skynet-2" = {
-                pskRaw = "ext:skynet-2";
+              environmentFile = config.age.secrets.wifi.path;
+              networks.skynet-2 = {
+                psk = "@skynet-2@";
               };
             };
           };
@@ -201,30 +185,26 @@
 
           sdImage = {
             populateRootCommands = ''
+              mkdir -p ./files/root/.ssh
+              chmod 700 ./files/root/.ssh
+              cp "${printerKey}" ./files/root/.ssh/printer-agenix-key
+              chmod 600 ./files/root/.ssh/printer-agenix-key
+
               mkdir -p ./files/boot
               ${config.boot.loader.generic-extlinux-compatible.populateCmd} -c ${config.system.build.toplevel} -d ./files/boot
             '';
+
             populateFirmwareCommands = ''
-              ls
+              echo "🐗"
             '';
 
             postBuildCommands = ''
               dd if=${pkgs.ubootBananaPim2Zero}/u-boot-sunxi-with-spl.bin of=$img bs=1024 seek=8 conv=notrunc
             '';
-
             compressImage = false;
           };
         })
       ];
-    };
-
-    packages.${buildSystem} = {
-      sdImage = self.nixosConfigurations.printer.config.system.build.sdImage;
-
-      # NOTE: inspect uboot env vars with
-      # nix build .#uboot
-      # strings result/u-boot-sunxi-with-spl.bin | grep "fdt_addr_r"
-      uboot = self.nixosConfigurations.bpi-m2-zero.pkgs.ubootBananaPim2Zero;
     };
   };
 }
