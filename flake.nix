@@ -53,8 +53,8 @@
       (pkgs.klipper-firmware.override {
         firmwareConfig = ./klipper/mcu;
       }).overrideAttrs (old: {
-        # NOTE: versions >11 are broken
-        nativeBuildInputs = [pkgs.gcc-arm-embedded-11] ++ (old.nativeBuildInputs or []);
+        # NOTE: fix unwind-arm.c:(.text.get_eit_entry+0x94): undefined reference to `__exidx_end'
+        nativeBuildInputs = [pkgs.gcc-arm-embedded-11] ++ (old.nativeBuildInputs);
       });
   in {
     devShells.x86_64-linux.default = nixpkgs.legacyPackages.x86_64-linux.mkShell {

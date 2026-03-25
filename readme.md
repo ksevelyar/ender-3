@@ -6,6 +6,13 @@
 * [ ] migrate from marlin to klipper
 * [ ] print belt tensioner for Y axis
 
+## Klipper MCU Config
+```
+nix develop
+
+klipper-genconf
+```
+
 ## firmware
 ```
 nix build .#klipper-firmware
