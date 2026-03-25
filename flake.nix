@@ -76,31 +76,43 @@
             (modulesPath + "/profiles/minimal.nix")
           ];
 
-          # Enable UART3 (ttyS3) for Banana Pi M2 Zero (pins 8+10)
-          # hardware.deviceTree = {
-          #   enable = true;
-          #   name = "sun8i-h2-plus-bananapi-m2-zero.dtb";
-          #   overlays = [
-          #     {
-          #       name = "uart3-enable";
-          #       dtsText = ''
-          #         /dts-v1/;
-          #         /plugin/;
-          #         / {
-          #           compatible = "allwinner,sun8i-h2-plus";
-          #           fragment@0 {
-          #             target = <&uart3>;
-          #             __overlay__ {
-          #               pinctrl-names = "default";
-          #               pinctrl-0 = <&uart3_pins>;
-          #               status = "okay";
-          #             };
-          #           };
-          #         };
-          #       '';
-          #     }
-          #   ];
-          # };
+          hardware.deviceTree = {
+            enable = true;
+            name = "sun8i-h2-plus-bananapi-m2-zero.dtb";
+            overlays = [
+              {
+                name = "uart3-enable";
+                filter = "*bananapi-m2-zero*.dtb";
+                dtsText = ''
+                  /dts-v1/;
+                  /plugin/;
+                  / {
+                    compatible = "allwinner,sun8i-h2-plus";
+                    fragment@0 {
+                      target = <&uart3>;
+                      __overlay__ {
+                        pinctrl-names = "default";
+                        pinctrl-0 = <&uart3_pins>;
+                        status = "okay";
+                      };
+                    };
+                    fragment@1 {
+                      target = <&spi1>;
+                      __overlay__ {
+                        status = "disabled";
+                      };
+                    };
+                    fragment@2 {
+                      target-path = "/aliases";
+                      __overlay__ {
+                        serial3 = "/soc/serial@1c28c00";
+                      };
+                    };
+                  };
+                '';
+              }
+            ];
+          };
 
           age = {
             identityPaths = ["/root/.ssh/printer-agenix-key"];
@@ -141,13 +153,10 @@
             fd
             fzf
             ripgrep
-            zip
-            tealdeer
             bottom
             macchina
             usbutils
             dtc
-            screen
           ];
           environment.defaultPackages = [];
 
