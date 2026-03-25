@@ -57,6 +57,12 @@
         nativeBuildInputs = [pkgs.gcc-arm-embedded-11] ++ (old.nativeBuildInputs or []);
       });
   in {
+    devShells.x86_64-linux.default = nixpkgs.legacyPackages.x86_64-linux.mkShell {
+      buildInputs = with nixpkgs.legacyPackages.x86_64-linux; [
+        klipper-genconf
+      ];
+    };
+
     packages.x86_64-linux.klipper-firmware = klipperFirmware nixpkgs.legacyPackages.x86_64-linux;
 
     nixosConfigurations.printer = lib.nixosSystem {
