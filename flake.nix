@@ -49,12 +49,11 @@
       };
     };
 
-    # Firmware built on x86_64 host (newer gcc-arm-embedded breaks armv7l)
     klipperFirmware = pkgs:
       (pkgs.klipper-firmware.override {
         firmwareConfig = ./klipper/mcu;
       }).overrideAttrs (old: {
-        # NOTE: versions >11 are broken for armv7l-linux
+        # NOTE: versions >11 are broken
         nativeBuildInputs = [pkgs.gcc-arm-embedded-11] ++ (old.nativeBuildInputs or []);
       });
   in {
@@ -76,6 +75,32 @@
             (modulesPath + "/installer/sd-card/sd-image.nix")
             (modulesPath + "/profiles/minimal.nix")
           ];
+
+          # Enable UART3 (ttyS3) for Banana Pi M2 Zero (pins 8+10)
+          # hardware.deviceTree = {
+          #   enable = true;
+          #   name = "sun8i-h2-plus-bananapi-m2-zero.dtb";
+          #   overlays = [
+          #     {
+          #       name = "uart3-enable";
+          #       dtsText = ''
+          #         /dts-v1/;
+          #         /plugin/;
+          #         / {
+          #           compatible = "allwinner,sun8i-h2-plus";
+          #           fragment@0 {
+          #             target = <&uart3>;
+          #             __overlay__ {
+          #               pinctrl-names = "default";
+          #               pinctrl-0 = <&uart3_pins>;
+          #               status = "okay";
+          #             };
+          #           };
+          #         };
+          #       '';
+          #     }
+          #   ];
+          # };
 
           age = {
             identityPaths = ["/root/.ssh/printer-agenix-key"];
@@ -120,6 +145,9 @@
             tealdeer
             bottom
             macchina
+            usbutils
+            dtc
+            screen
           ];
           environment.defaultPackages = [];
 
@@ -167,7 +195,15 @@
 
           # NOTE: upload big files via fluid
           services.nginx.clientMaxBodySize = "100m";
-          services.fluidd.enable = true;
+
+          networking.firewall = {
+            enable = true;
+            allowedTCPPorts = [80];
+          };
+          services.fluidd = {
+            enable = true;
+            hostName = "printer.local";
+          };
 
           users.users.moonraker.extraGroups = ["klipper"];
           security.polkit.enable = true;
@@ -215,7 +251,7 @@
                 "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOrgLo+NfYI06fdY1BamC5o2tNeRlw1ZuPAkyy41w0Ir ksevelyar@gmail.com"
               ];
               hashedPasswordFile = config.age.secrets.root-password.path;
-              extraGroups = ["wheel"];
+              extraGroups = ["wheel" "dialout"];
             };
           };
 

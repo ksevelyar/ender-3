@@ -9,11 +9,6 @@
 * https://github.com/Klipper3d/klipper/blob/master/config/generic-bigtreetech-skr-v1.4.cfg
 * https://github.com/Klipper3d/klipper/blob/master/config/printer-creality-ender3pro-2020.cfg
 
-## Build
-```
-nix build .#sdImage --max-jobs 2 --cores 2
-```
-
 ## Calibration
 PROBE_CALIBRATE
 SAVE_CONFIG
