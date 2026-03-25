@@ -138,7 +138,6 @@
             consoleLogLevel = 1;
             loader.grub.enable = false;
             loader.generic-extlinux-compatible.enable = true;
-            loader.generic-extlinux-compatible.configurationLimit = 1;
             kernelPackages = pkgs.linuxPackagesFor pkgs.linux_latest;
             kernelParams = ["console=tty0"];
             supportedFilesystems = lib.mkForce ["vfat" "ext4"];
@@ -146,6 +145,7 @@
 
           documentation.enable = false;
           documentation.man.generateCaches = false;
+          services.lvm.enable = false;
 
           environment.systemPackages = with pkgs; [
             tmux
@@ -228,6 +228,7 @@
             address = "0.0.0.0";
             allowSystemControl = true;
             settings = {
+              # NOTE: allow file upload from slicer
               octoprint_compat = {};
               authorization = {
                 force_logins = false;
@@ -240,6 +241,7 @@
             };
           };
 
+          # Unable to create log file at '/var/lib/moonraker/logs/moonraker.log'
           systemd.tmpfiles.rules = [
             "d /var/lib/moonraker/logs 0775 moonraker moonraker -"
           ];
