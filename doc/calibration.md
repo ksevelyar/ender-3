@@ -1,4 +1,11 @@
-# Ender 3 Bed Calibration (BLTouch)
+# Klipper calibration
+
+## Extruder steps
+1) heat hotend to 210C
+2) retract 100mm
+3) remove bowden
+
+extrude 100mm at 1mm speed
 
 ## 1. Check BLTouch
 Ensure the BLTouch is mounted vertically and has no wobble.
