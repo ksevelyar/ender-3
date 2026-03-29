@@ -30,7 +30,7 @@
 
       python311 = prev.python311.override {
         packageOverrides = pself: psuper: {
-          # NOTE: libcurl.so: file not recognized: file format not recognized
+          # NOTE: fix libcurl.so: file not recognized: file format not recognized
           pycurl = psuper.pycurl.overrideAttrs (old: {
             preConfigure = ''
               ${old.preConfigure}
@@ -38,7 +38,7 @@
             '';
           });
 
-          # NOTE: libgeos_c.so: file not recognized: file format not recognized
+          # NOTE: fix libgeos_c.so: file not recognized: file format not recognized
           shapely = psuper.shapely.overrideAttrs (old: {
             preConfigure = ''
               ${old.preConfigure or ""}
@@ -304,6 +304,7 @@
               chmod 700 ./files/root/.ssh
               cp "${printerAgenixKey}" ./files/root/.ssh/printer-agenix-key
               chmod 600 ./files/root/.ssh/printer-agenix-key
+
               mkdir -p ./files/boot
               ${config.boot.loader.generic-extlinux-compatible.populateCmd} -c ${config.system.build.toplevel} -d ./files/boot
             '';
