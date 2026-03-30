@@ -1,4 +1,5 @@
 # Ender 3
+[![](./doc/fluidd.png)](./doc/fluidd.png)
 
 ## firmware
 ```
