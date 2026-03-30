@@ -1,18 +1,5 @@
 # Ender 3
 
-## release 1.0
-* [x] add doc/calibration.md
-* [x] migrate from armbian to NixOS
-* [ ] migrate from marlin to klipper
-* [ ] print belt tensioner for Y axis
-
-## Klipper MCU Config
-```
-nix develop
-
-klipper-genconf
-```
-
 ## firmware
 ```
 nix build .#klipper-firmware

@@ -1,4 +1,4 @@
-# Klipper calibration
+# Printer calibration
 
 ## Extruder steps
 1) heat hotend to 210C

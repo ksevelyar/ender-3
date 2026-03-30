@@ -8,4 +8,4 @@
 
 ## Assembley
 * EXP3 on the LCD to EXP1 on the SKR 1.4
-* Колеса должны прокручиваться, если колесо не прокручивается или прокручивается тяжело, то оно перетянуто
+* serial console on pins 8(TxD) and 10(RxD) is mapped to /dev/ttyS3 (UART3) on banana PI M2 Zero
