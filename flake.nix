@@ -76,6 +76,18 @@
           ...
         }: let
           printerAgenixKey = pkgs.writeText "printer-agenix-key" (builtins.readFile /home/ksevelyar/.ssh/guest_ed25519_key);
+          gcodeShellCommandPy = pkgs.fetchurl {
+            url = "https://raw.githubusercontent.com/dw-0/kiauh/master/kiauh/extensions/gcode_shell_cmd/assets/gcode_shell_command.py";
+            sha256 = "sha256-WTcKHi+2BNRnLBxBueJmkG5Zb9zfr+RvXPeQSJWEHSk=";
+          };
+
+          klipperWithShellCommand = pkgs.klipper.overrideAttrs (old: {
+            postInstall =
+              (old.postInstall or "")
+              + ''
+                cp ${gcodeShellCommandPy} $out/lib/klipper/extras/gcode_shell_command.py
+              '';
+          });
         in {
           imports = [
             (modulesPath + "/installer/sd-card/sd-image.nix")
@@ -200,6 +212,7 @@
             # NOTE: not supported for armv7l-linux
             firmwares.mcu.enable = false;
             configFile = ./klipper/printer.cfg;
+            package = klipperWithShellCommand;
           };
 
           users.users.klipper = {
