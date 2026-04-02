@@ -148,6 +148,7 @@
           services.lvm.enable = false;
 
           environment.systemPackages = with pkgs; [
+            android-tools
             tmux
             vim
             rsync
