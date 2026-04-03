@@ -159,8 +159,8 @@
           documentation.man.generateCaches = false;
           services.lvm.enable = false;
 
+          programs.adb.enable = true;
           environment.systemPackages = with pkgs; [
-            android-tools
             tmux
             vim
             rsync
@@ -234,7 +234,7 @@
             hostName = "printer.local";
           };
 
-          users.users.moonraker.extraGroups = ["klipper"];
+          users.users.moonraker.extraGroups = ["klipper" "adbusers"];
           security.polkit.enable = true;
 
           services.moonraker = {
@@ -282,7 +282,7 @@
                 "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOrgLo+NfYI06fdY1BamC5o2tNeRlw1ZuPAkyy41w0Ir ksevelyar@gmail.com"
               ];
               hashedPasswordFile = config.age.secrets.root-password.path;
-              extraGroups = ["wheel" "dialout"];
+              extraGroups = ["wheel" "dialout" "adbusers"];
             };
           };
 
@@ -311,6 +311,11 @@
             enable = true;
             cpuFreqGovernor = "powersave";
           };
+
+          # NOTE: android phone for timelapses
+          services.udev.extraRules = ''
+            SUBSYSTEM=="usb", ATTR{idVendor}=="22d9", MODE="0666", GROUP="adbusers"
+          '';
 
           sdImage = {
             populateRootCommands = ''
