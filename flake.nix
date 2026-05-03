@@ -213,6 +213,7 @@
             firmwares.mcu.enable = false;
             configFile = ./klipper/printer.cfg;
             package = klipperWithShellCommand;
+            logFile = "/var/lib/klipper/klipper.log";
           };
 
           users.users.klipper = {
