@@ -2,7 +2,7 @@
   description = "NixOS sdImage for Banana Pi M2 Zero";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.05";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
     agenix.url = "github:ryantm/agenix/caab0435e181becfd66c24e5ea5ae56ac837afbe";
     agenix.inputs.nixpkgs.follows = "nixpkgs";
   };
@@ -14,48 +14,10 @@
   }: let
     lib = nixpkgs.lib;
 
-    crossOverlay = final: prev: {
-      ubootBananaPim2Zero =
-        (prev.buildUBoot {
-          defconfig = "bananapi_m2_zero_defconfig";
-          filesToInstall = ["u-boot-sunxi-with-spl.bin"];
-          extraMeta.platforms = ["armv7l-linux"];
-        }).overrideAttrs (old: {
-          # NOTE: fix for FDT image overlaps OS image (OS=42000000..4308b200)
-          postPatch = ''
-            ${old.postPatch or ""}
-            substituteInPlace include/configs/sunxi-common.h --replace-fail 'SDRAM_OFFSET(3000000)' 'SDRAM_OFFSET(5000000)'
-          '';
-        });
-
-      python311 = prev.python311.override {
-        packageOverrides = pself: psuper: {
-          # NOTE: fix libcurl.so: file not recognized: file format not recognized
-          pycurl = psuper.pycurl.overrideAttrs (old: {
-            preConfigure = ''
-              ${old.preConfigure}
-              export PYCURL_CURL_CONFIG="${final.curl.dev}/bin/curl-config"
-            '';
-          });
-
-          # NOTE: fix libgeos_c.so: file not recognized: file format not recognized
-          shapely = psuper.shapely.overrideAttrs (old: {
-            preConfigure = ''
-              ${old.preConfigure or ""}
-              export GEOS_CONFIG="${final.geos}/bin/geos-config"
-            '';
-          });
-        };
-      };
-    };
-
     klipperFirmware = pkgs:
-      (pkgs.klipper-firmware.override {
+      pkgs.klipper-firmware.override {
         firmwareConfig = ./klipper/mcu;
-      }).overrideAttrs (old: {
-        # NOTE: fix unwind-arm.c:(.text.get_eit_entry+0x94): undefined reference to `__exidx_end'
-        nativeBuildInputs = [pkgs.gcc-arm-embedded-11] ++ (old.nativeBuildInputs);
-      });
+      };
   in {
     devShells.x86_64-linux.default = nixpkgs.legacyPackages.x86_64-linux.mkShell {
       buildInputs = with nixpkgs.legacyPackages.x86_64-linux; [
@@ -69,13 +31,13 @@
       system = "x86_64-linux";
       modules = [
         agenix.nixosModules.default
+        (import ./banana-pi-m2-zero.nix)
         ({
           pkgs,
           modulesPath,
           config,
           ...
         }: let
-          printerAgenixKey = pkgs.writeText "printer-agenix-key" (builtins.readFile /home/ksevelyar/.ssh/guest_ed25519_key);
           gcodeShellCommandPy = pkgs.fetchurl {
             url = "https://raw.githubusercontent.com/dw-0/kiauh/master/kiauh/extensions/gcode_shell_cmd/assets/gcode_shell_command.py";
             sha256 = "sha256-WTcKHi+2BNRnLBxBueJmkG5Zb9zfr+RvXPeQSJWEHSk=";
@@ -94,44 +56,6 @@
             (modulesPath + "/profiles/minimal.nix")
           ];
 
-          hardware.deviceTree = {
-            enable = true;
-            name = "sun8i-h2-plus-bananapi-m2-zero.dtb";
-            overlays = [
-              {
-                name = "uart3-enable";
-                filter = "*bananapi-m2-zero*.dtb";
-                dtsText = ''
-                  /dts-v1/;
-                  /plugin/;
-                  / {
-                    compatible = "allwinner,sun8i-h2-plus";
-                    fragment@0 {
-                      target = <&uart3>;
-                      __overlay__ {
-                        pinctrl-names = "default";
-                        pinctrl-0 = <&uart3_pins>;
-                        status = "okay";
-                      };
-                    };
-                    fragment@1 {
-                      target = <&spi1>;
-                      __overlay__ {
-                        status = "disabled";
-                      };
-                    };
-                    fragment@2 {
-                      target-path = "/aliases";
-                      __overlay__ {
-                        serial3 = "/soc/serial@1c28c00";
-                      };
-                    };
-                  };
-                '';
-              }
-            ];
-          };
-
           age = {
             identityPaths = ["/root/.ssh/printer-agenix-key"];
             secrets.wifi.file = ./secrets/wifi.age;
@@ -141,7 +65,6 @@
           nixpkgs = {
             config.allowUnsupportedSystem = true;
             crossSystem.system = "armv7l-linux";
-            overlays = [crossOverlay];
           };
 
           system.stateVersion = "24.05";
@@ -151,16 +74,16 @@
             loader.grub.enable = false;
             loader.generic-extlinux-compatible.enable = true;
             kernelPackages = pkgs.linuxPackagesFor pkgs.linux_latest;
-            kernelParams = ["console=tty0"];
+            kernelParams = ["console=tty0" "ieee80211_regdom=RU"];
             supportedFilesystems = lib.mkForce ["vfat" "ext4"];
           };
 
           documentation.enable = false;
-          documentation.man.generateCaches = false;
+          documentation.man.cache.enable = false;
           services.lvm.enable = false;
 
-          programs.adb.enable = true;
           environment.systemPackages = with pkgs; [
+            android-tools
             tmux
             vim
             rsync
@@ -189,9 +112,6 @@
               PasswordAuthentication = false;
             };
           };
-
-          # NOTE: fix setgroups crash on arm
-          systemd.services.avahi-daemon.serviceConfig.SystemCallFilter = lib.mkForce [];
 
           services.avahi = {
             enable = true;
@@ -294,9 +214,9 @@
             interfaces.wlan0.useDHCP = true;
             wireless = {
               enable = true;
-              environmentFile = config.age.secrets.wifi.path;
+              secretsFile = config.age.secrets.wifi.path;
               networks.skynet-2 = {
-                psk = "@SKYNET_2@";
+                pskRaw = "ext:SKYNET_2";
               };
             };
           };
@@ -317,21 +237,6 @@
           services.udev.extraRules = ''
             SUBSYSTEM=="usb", ATTR{idVendor}=="22d9", MODE="0666", GROUP="adbusers"
           '';
-
-          sdImage = {
-            populateRootCommands = ''
-              mkdir -p ./files/root/.ssh
-              chmod 700 ./files/root/.ssh
-              cp "${printerAgenixKey}" ./files/root/.ssh/printer-agenix-key
-              chmod 600 ./files/root/.ssh/printer-agenix-key
-
-              mkdir -p ./files/boot
-              ${config.boot.loader.generic-extlinux-compatible.populateCmd} -c ${config.system.build.toplevel} -d ./files/boot
-            '';
-            populateFirmwareCommands = "echo 'NOTE: not used, but still required for sdImage 🐗'";
-            postBuildCommands = "dd if=${pkgs.ubootBananaPim2Zero}/u-boot-sunxi-with-spl.bin of=$img bs=1024 seek=8 conv=notrunc";
-            compressImage = false;
-          };
         })
       ];
     };
