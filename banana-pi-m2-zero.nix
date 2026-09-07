@@ -1,7 +1,7 @@
 # NOTE: Banana Pi M2 Zero specifics: soc fixes, device tree, u-boot, sd image
 {
   pkgs,
-  modulesPath,
+  lib,
   config,
   ...
 }: {
@@ -23,12 +23,15 @@
       # NOTE: cross gcc defaults to vfpv3-d16, openblas ARMV7 kernels need d16-d31
       openblas =
         if prev.stdenv.hostPlatform.isAarch32
-        then prev.openblas.overrideAttrs (old: {
-          cmakeFlags = (old.cmakeFlags or []) ++ [
-            "-DCMAKE_C_FLAGS=-mfpu=neon-vfpv4"
-            "-DCMAKE_ASM_FLAGS=-mfpu=neon-vfpv4"
-          ];
-        })
+        then
+          prev.openblas.overrideAttrs (old: {
+            cmakeFlags =
+              (old.cmakeFlags or [])
+              ++ [
+                "-DCMAKE_C_FLAGS=-mfpu=neon-vfpv4"
+                "-DCMAKE_ASM_FLAGS=-mfpu=neon-vfpv4"
+              ];
+          })
         else prev.openblas;
 
       # NOTE: xtask (host tool) links armv7 pcre2; docs not needed anyway
@@ -50,21 +53,27 @@
 
           # NOTE: meson picks x86_64 build python (wrong SIZEOF_LONG in pyconfig.h)
           matplotlib = psuper.matplotlib.overrideAttrs (old: {
-            mesonFlags = (old.mesonFlags or []) ++ [
-              "--cross-file=${prev.writeText "matplotlib-host-python.ini" ''
-                [binaries]
-                python = '${psuper.python}/bin/python3.13'
-              ''}"
-            ];
+            mesonFlags =
+              (old.mesonFlags or [])
+              ++ [
+                "--cross-file=${prev.writeText "matplotlib-host-python.ini" ''
+                  [binaries]
+                  python = '${psuper.python}/bin/python3.13'
+                ''}"
+              ];
             # NOTE: pybind11-config runs x86_64 python and injects its include dir
-            postPatch = (old.postPatch or "") + ''
-              substituteInPlace meson.build --replace-fail \
-                "pybind11_dep = dependency('pybind11', version: '>=2.13.2')" \
-                "pybind11_dep = dependency('pybind11', version: '>=2.13.2', method: 'pkg-config')"
-            '';
-            preConfigure = (old.preConfigure or "") + ''
-              export PKG_CONFIG_PATH="${psuper.pybind11}/share/pkgconfig''${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
-            '';
+            postPatch =
+              (old.postPatch or "")
+              + ''
+                substituteInPlace meson.build --replace-fail \
+                  "pybind11_dep = dependency('pybind11', version: '>=2.13.2')" \
+                  "pybind11_dep = dependency('pybind11', version: '>=2.13.2', method: 'pkg-config')"
+              '';
+            preConfigure =
+              (old.preConfigure or "")
+              + ''
+                export PKG_CONFIG_PATH="${psuper.pybind11}/share/pkgconfig''${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+              '';
           });
         };
       };
@@ -74,6 +83,7 @@
   hardware.deviceTree = {
     enable = true;
     name = "sun8i-h2-plus-bananapi-m2-zero.dtb";
+    filter = "*bananapi-m2-zero*";
     overlays = [
       {
         name = "uart3-enable";
@@ -108,6 +118,21 @@
       }
     ];
   };
+
+  # NOTE: only AP6212 wifi firmware, not all of linux-firmware
+  hardware.enableRedistributableFirmware = lib.mkForce false;
+  hardware.firmware = [
+    (pkgs.runCommand "firmware-brcm43430" {} ''
+      mkdir -p $out/lib/firmware/brcm
+      src=${pkgs.linux-firmware}/lib/firmware/brcm
+      cp $src/brcmfmac43430-sdio.bin* $out/lib/firmware/brcm/
+      cp $src/brcmfmac43430-sdio.clm_blob* $out/lib/firmware/brcm/
+      for f in $src/brcmfmac43430-sdio.AP6212.txt*; do
+        cp "$f" "$out/lib/firmware/brcm/brcmfmac43430-sdio.txt''${f##*.AP6212.txt}"
+      done
+    '')
+    pkgs.wireless-regdb
+  ];
 
   sdImage = {
     populateRootCommands = ''

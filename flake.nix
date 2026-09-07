@@ -82,12 +82,13 @@
           documentation.man.cache.enable = false;
           services.lvm.enable = false;
 
-          environment.systemPackages = with pkgs; [
+          # NOTE: mkForce drops klipper-genconf added by the klipper module (pulls klipper src)
+          environment.systemPackages = lib.mkForce (with pkgs; [
             android-tools
             tmux
             vim
             rsync
-            git
+            gitMinimal
             lm_sensors
             powertop
             zoxide
@@ -99,7 +100,7 @@
             macchina
             usbutils
             dtc
-          ];
+          ]);
           environment.defaultPackages = [];
 
           nix.extraOptions = "experimental-features = nix-command flakes";
