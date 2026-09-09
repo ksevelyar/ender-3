@@ -41,6 +41,55 @@
         doInstallCheck = false;
       });
 
+      # NOTE: neovim needs only libtree-sitter; skip CLI cargo build (rquickjs bindgen broken on armv7)
+      tree-sitter =
+        if prev.stdenv.hostPlatform.isAarch32
+        then
+          prev.stdenv.mkDerivation {
+            pname = "tree-sitter";
+            version = "0.26.8";
+            src = prev.fetchFromGitHub {
+              owner = "tree-sitter";
+              repo = "tree-sitter";
+              tag = "v0.26.8";
+              hash = "sha256-fcFEfoALrbpBD6rWogxJ7FNVlvDQgswoX9ylRgko+8Q=";
+              fetchSubmodules = true;
+            };
+            buildPhase = "make libtree-sitter.a libtree-sitter.so";
+            installPhase = ''
+              mkdir -p $out/lib $out/include/tree_sitter $out/lib/pkgconfig
+              cp libtree-sitter.so libtree-sitter.a $out/lib/
+              ln -s libtree-sitter.so $out/lib/libtree-sitter.so.0
+              ln -s libtree-sitter.so $out/lib/libtree-sitter.so.0.26
+              cp lib/include/tree_sitter/api.h $out/include/tree_sitter/
+              cat > $out/lib/pkgconfig/tree-sitter.pc <<EOF
+              prefix=$out
+              libdir=''${prefix}/lib
+              includedir=''${prefix}/include
+
+              Name: tree-sitter
+              Description: incremental parsing library
+              Version: 0.26.8
+              Libs: -L''${libdir} -ltree-sitter
+              Cflags: -I''${includedir}
+              EOF
+            '';
+            passthru = prev.tree-sitter.passthru or {};
+          }
+        else prev.tree-sitter;
+
+      # NOTE: nlua0 codegen lib is armv7, run generator with target luajit via binfmt
+      neovim-unwrapped =
+        if prev.stdenv.hostPlatform.isAarch32
+        then prev.neovim-unwrapped.overrideAttrs (old: {
+          cmakeFlags = (old.cmakeFlags or []) ++ [
+            (lib.cmakeFeature "LUA_GEN_PRG" "${prev.luajit}/bin/luajit")
+            # NOTE: x86 luajit produces 64-bit bytecode, armv7 nvim needs 32-bit; ship plain lua
+            (lib.cmakeBool "COMPILE_LUA" false)
+          ];
+        })
+        else prev.neovim-unwrapped;
+
       python313 = prev.python313.override {
         packageOverrides = pself: psuper: {
           # NOTE: setup.py picks x86_64 curl-config from PATH
@@ -87,7 +136,6 @@
     overlays = [
       {
         name = "uart3-enable";
-        filter = "*bananapi-m2-zero*.dtb";
         dtsText = ''
           /dts-v1/;
           /plugin/;
@@ -102,12 +150,6 @@
               };
             };
             fragment@1 {
-              target = <&spi1>;
-              __overlay__ {
-                status = "disabled";
-              };
-            };
-            fragment@2 {
               target-path = "/aliases";
               __overlay__ {
                 serial3 = "/soc/serial@1c28c00";
@@ -118,6 +160,15 @@
       }
     ];
   };
+
+  # NOTE: RTC_DRV_SUN6I missing from nixpkgs armv7 kernel config
+  boot.kernelPackages = pkgs.linuxPackagesFor (pkgs.linux_latest.override {
+    structuredExtraConfig = with lib.kernel; {
+      RTC_DRV_SUN6I = yes;
+      # NOTE: 7.x pwrseq_simple via reset-gpio module fails on this board,
+      RESET_GPIO = no;
+    };
+  });
 
   # NOTE: only AP6212 wifi firmware, not all of linux-firmware
   hardware.enableRedistributableFirmware = lib.mkForce false;
