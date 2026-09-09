@@ -59,6 +59,8 @@
           age = {
             identityPaths = ["/root/.ssh/printer-agenix-key"];
             secrets.wifi.file = ./secrets/wifi.age;
+            secrets.wifi.owner = "wpa_supplicant";
+            secrets.wifi.group = "wpa_supplicant";
             secrets.root-password.file = ./secrets/root-password.age;
           };
 
@@ -73,8 +75,7 @@
             consoleLogLevel = 1;
             loader.grub.enable = false;
             loader.generic-extlinux-compatible.enable = true;
-            kernelPackages = pkgs.linuxPackagesFor pkgs.linux_latest;
-            kernelParams = ["console=tty0" "ieee80211_regdom=RU"];
+            kernelParams = ["console=tty0"];
             supportedFilesystems = lib.mkForce ["vfat" "ext4"];
           };
 
@@ -82,11 +83,13 @@
           documentation.man.cache.enable = false;
           services.lvm.enable = false;
 
-          # NOTE: mkForce drops klipper-genconf added by the klipper module (pulls klipper src)
-          environment.systemPackages = lib.mkForce (with pkgs; [
+          environment.systemPackages = with pkgs; [
+            bashInteractive
+            fish
+            openssh
             android-tools
             tmux
-            vim
+            neovim-unwrapped
             rsync
             gitMinimal
             lm_sensors
@@ -100,10 +103,16 @@
             macchina
             usbutils
             dtc
-          ]);
+          ];
           environment.defaultPackages = [];
 
           nix.extraOptions = "experimental-features = nix-command flakes";
+
+          # NOTE: minimize sd card writes
+          services.journald.storage = "volatile";
+          boot.tmp.useTmpfs = true;
+          boot.tmp.tmpfsSize = "50M";
+          fileSystems."/".options = [ "noatime" "commit=60" ];
 
           services.openssh = {
             enable = true;
@@ -113,6 +122,9 @@
               PasswordAuthentication = false;
             };
           };
+
+          # NOTE: fix setgroups crash on arm
+          systemd.services.avahi-daemon.serviceConfig.SystemCallFilter = lib.mkForce [];
 
           services.avahi = {
             enable = true;
@@ -134,7 +146,7 @@
             firmwares.mcu.enable = false;
             configFile = ./klipper/printer.cfg;
             package = klipperWithShellCommand;
-            logFile = "/var/lib/klipper/klipper.log";
+            logFile = "/tmp/klipper.log";
           };
 
           users.users.klipper = {
@@ -151,6 +163,12 @@
             enable = true;
             allowedTCPPorts = [80];
           };
+          fileSystems."/var/lib/moonraker/logs" = {
+            device = "none";
+            fsType = "tmpfs";
+            options = [ "defaults" "mode=0775" ];
+          };
+
           services.fluidd = {
             enable = true;
             hostName = "printer.local";
@@ -216,6 +234,7 @@
             wireless = {
               enable = true;
               secretsFile = config.age.secrets.wifi.path;
+              extraConfig = "country=RU";
               networks.skynet-2 = {
                 pskRaw = "ext:SKYNET_2";
               };
@@ -228,16 +247,10 @@
           };
 
           hardware.bluetooth.enable = false;
-
           powerManagement = {
             enable = true;
             cpuFreqGovernor = "powersave";
           };
-
-          # NOTE: android phone for timelapses
-          services.udev.extraRules = ''
-            SUBSYSTEM=="usb", ATTR{idVendor}=="22d9", MODE="0666", GROUP="adbusers"
-          '';
         })
       ];
     };
