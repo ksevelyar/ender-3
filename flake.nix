@@ -111,7 +111,7 @@
           # NOTE: minimize sd card writes
           services.journald.storage = "volatile";
           boot.tmp.useTmpfs = true;
-          boot.tmp.tmpfsSize = "50M";
+          boot.tmp.tmpfsSize = "100M";
           fileSystems."/".options = [ "noatime" "commit=60" ];
 
           services.openssh = {
@@ -168,6 +168,9 @@
             fsType = "tmpfs";
             options = [ "defaults" "mode=0775" ];
           };
+
+          services.nginx.proxyTimeout = "600s";
+          services.nginx.recommendedProxySettings = true;
 
           services.fluidd = {
             enable = true;
